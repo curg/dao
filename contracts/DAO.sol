@@ -147,7 +147,7 @@ contract DAO is Context {
         // "setConfirmationInterval"
         bytes32 name_ = 0x736574436f6e6669726d6174696f6e496e74657276616c000000000000000000;
 
-        bytes32[] memory arguments_;
+        bytes32[] memory arguments_ = new bytes32[](1);
         arguments_[0] = bytes32(newConfirmationInterval);
 
         return sendRequest(name_, arguments_, timeLimit);
@@ -169,10 +169,12 @@ contract DAO is Context {
         uint256 newConfirmationInterval,
         bytes32 key_
     ) public virtual returns (bool) {
+        require(newConfirmationInterval < _minimumTimeLimit);
+
         // "setConfirmationInterval"
         bytes32 name_ = 0x736574436f6e6669726d6174696f6e496e74657276616c000000000000000000;
 
-        bytes32[] memory arguments_;
+        bytes32[] memory arguments_ = new bytes32[](1);
         arguments_[0] = bytes32(newConfirmationInterval);
 
         // conditions
@@ -207,7 +209,7 @@ contract DAO is Context {
         // "setMinimumTimeLimit"
         bytes32 name_ = 0x7365744d696e696d756d54696d654c696d697400000000000000000000000000;
 
-        bytes32[] memory arguments_;
+        bytes32[] memory arguments_ = new bytes32[](1);
         arguments_[0] = bytes32(newMinimumTimeLimit);
 
         return sendRequest(name_, arguments_, timeLimit);
@@ -225,10 +227,12 @@ contract DAO is Context {
         uint256 newMinimumTimeLimit,
         bytes32 key_
     ) public virtual returns (bool) {
+        require(newMinimumTimeLimit > _confirmationInterval);
+
         // "setConfirmationInterval"
         bytes32 name_ = 0x7365744d696e696d756d54696d654c696d697400000000000000000000000000;
 
-        bytes32[] memory arguments_;
+        bytes32[] memory arguments_ = new bytes32[](1);
         arguments_[0] = bytes32(newMinimumTimeLimit);
 
         // conditions
@@ -262,10 +266,10 @@ contract DAO is Context {
         campaign.timeLimit = timeLimit;
     }
 
-    function voteAt(
+    function _voteAt(
         uint256 campaignNum,
         int256 weights
-    ) public virtual returns (bool) {
+    ) internal returns (bool) {
         Campaign storage campaign = _campaigns[campaignNum];
         address msgSender = _msgSender();
         Participant storage participant = campaign.participants[msgSender];
@@ -315,17 +319,4 @@ contract DAO is Context {
 
         return campaign.result;
     }
-
-    // /**
-    //  * @dev Converts uint256 to int256.
-    //  */
-    // function _uintToInt(
-    //     uint256 elem
-    // ) internal pure returns (
-    //     int256 res_
-    // ) {
-    //     require(elem < uint256(-1), "Can't cast: cout of range of int256 max.");
-
-    //     res_ = int256(elem);
-    // }
 }

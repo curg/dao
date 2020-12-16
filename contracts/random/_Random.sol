@@ -4,7 +4,7 @@ pragma solidity ^0.6.2;
 
 
 // WARNING: This contract is the temporary implementation of random.
-// TODO: Using trustable random process for real uses.
+// Using trustable random process for real uses.
 contract Random {
     uint256 private seed;
     uint256 private recentRandomNumber;

@@ -5,6 +5,7 @@ pragma solidity ^0.6.2;
 import "./CGT.sol";
 
 
+// TODO: MUST require staking to enter DAO.
 contract Random {
     uint256 private seed;
     uint256 private recentRandomNumber;
