@@ -1,2 +1,2 @@
 # dao
-Contract module which is the implementation of a Decentralized Autonomous Organization (DAO)
+Contract modules which are various Decentralized Autonomous Organization (DAO) implementations
