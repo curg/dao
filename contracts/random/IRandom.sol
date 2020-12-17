@@ -1,54 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.6.2;
+pragma solidity >=0.6.0 <0.8.0;
 
 
 /**
  * @dev Abstarct contract of the Random contract.
- *
- * TODO:
- *
- * - adding VDF (verifiable delay functions) or VRF (verifiable random functions) .
- *
- * References:
- *
- * - https://github.com/randao/randao
- * - https://our.status.im/two-point-oh-randomness/
  */
-abstract contract Random {
-    function defaultRandom(
-    ) returns (
-        uint256 defaultRandom_
-    );
-
-    function createCampaign(
-        uint256 timeLimit
-    ) public virtual returns (
-        uint256 campaignNum_
-    );
-
-    function joinAt(
-        uint256 campaignNum
-    ) public virtual returns (bool);
-
-    function revealAt(
-        uint256 campaignNum
-    ) public virtual returns (bool);
+abstract contract IRandom {
+    event RandomNumber(uint256 randomNumber_);
 
     /** 
      * @dev Computes and returns the random number.
      */
-    function getRandomAt(
-        uint256 campaignNum
+    function random(
+        uint256 campaignNum // like seed
     ) public virtual returns (
         uint256 randomNumber
     );
-
-    function totalCampaigns(
-        // ...
-    ) public view virtual returns (
-        uint256 length_
-    );
-
-    event;
 }

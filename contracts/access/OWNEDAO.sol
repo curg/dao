@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.6.2;
+pragma solidity >=0.6.0 <0.8.0;
 
-import "./IOwnable.sol";
 import "openzeppelin-solidity/contracts/GSN/Context.sol";
-import "openzeppelin-solidity/contracts/math/SignedSafeMath.sol";
-import "../DAO.sol";
+import "../VOTEDAO.sol";
+import "./IOwnable.sol";
 
 
 /**
@@ -32,9 +31,7 @@ import "../DAO.sol";
  *
  * - openzeppelin-solidity/contracts/access/Ownable.sol
  */
-contract OWNEDAO is Context, DAO, IOwnable {
-    using SignedSafeMath for int256;
-
+contract OWNEDAO is Context, VOTEDAO, IOwnable {
     mapping(address => uint8) private _owners;
 
     /**
@@ -88,7 +85,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         address account,
         uint8 level,
         uint256 timeLimit
-    ) public virtual returns (
+    ) public returns (
         bytes32 key_,
         uint256 campaignNum_
     ) {
@@ -99,7 +96,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         arguments_[0] = bytes32(bytes20(account));
         arguments_[1] = bytes32(uint256(level));
 
-        return sendRequest(name_, arguments_, timeLimit);
+        return vSendRequest(name_, arguments_, timeLimit);
     }
 
     /**
@@ -109,7 +106,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         address account,
         uint8 level,
         bytes32 key_
-    ) public virtual returns (bool) {
+    ) public returns (bool) {
         // "addOwnership"
         bytes32 name_ = 0x6164644f776e6572736869700000000000000000000000000000000000000000;
 
@@ -118,7 +115,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         arguments_[1] = bytes32(uint256(level));
 
         // conditions
-        require(resolveRequest(name_, arguments_, key_));
+        require(vResolveRequest(name_, arguments_, key_));
 
         /* body start */
         _addOwnership(account, level);
@@ -133,7 +130,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
     function deleteOwnershipRequest(
         address account,
         uint256 timeLimit
-    ) public virtual returns (
+    ) public returns (
         bytes32 key_,
         uint256 campaignNum_
     ) {
@@ -143,7 +140,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         bytes32[] memory arguments_ = new bytes32[](1);
         arguments_[0] = bytes32(bytes20(account));
 
-        return sendRequest(name_, arguments_, timeLimit);
+        return vSendRequest(name_, arguments_, timeLimit);
     }
 
     /**
@@ -157,7 +154,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
      */
     function deleteOwnership(
         // ...
-    ) public virtual returns (bool) {
+    ) public returns (bool) {
         address msgSender = _msgSender();
 
         _deleteOwnership(msgSender);
@@ -177,7 +174,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
     function deleteOwnership(
         address account,
         bytes32 key_
-    ) public virtual returns (bool) {
+    ) public returns (bool) {
         // "deleteOwnership"
         bytes32 name_ = 0x64656c6574654f776e6572736869700000000000000000000000000000000000;
 
@@ -185,7 +182,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         arguments_[0] = bytes32(bytes20(account));
 
         // conditions
-        require(resolveRequest(name_, arguments_, key_));
+        require(vResolveRequest(name_, arguments_, key_));
 
         /* body start */
         _deleteOwnership(account);
@@ -201,7 +198,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         address oldOwner,
         address newOwner,
         uint256 timeLimit
-    ) public virtual returns (
+    ) public returns (
         bytes32 key_,
         uint256 campaignNum_
     ) {
@@ -212,7 +209,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         arguments_[0] = bytes32(bytes20(oldOwner));
         arguments_[1] = bytes32(bytes20(newOwner));
 
-        return sendRequest(name_, arguments_, timeLimit);
+        return vSendRequest(name_, arguments_, timeLimit);
     }
 
     /**
@@ -222,7 +219,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
      */
     function transferOwnership(
         address newOwner
-    ) public virtual returns (bool) {
+    ) public returns (bool) {
         address msgSender = _msgSender();
 
         _transferOwnership(msgSender, newOwner);
@@ -239,7 +236,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         address oldOwner,
         address newOwner,
         bytes32 key_
-    ) public virtual returns (bool) {
+    ) public returns (bool) {
         // "transferOwnership"
         bytes32 name_ = 0x7472616e736665724f776e657273686970000000000000000000000000000000;
 
@@ -248,7 +245,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         arguments_[1] = bytes32(bytes20(newOwner));
 
         // conditions
-        require(resolveRequest(name_, arguments_, key_));
+        require(vResolveRequest(name_, arguments_, key_));
 
         /* body start */
         _transferOwnership(oldOwner, newOwner);
@@ -264,7 +261,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         address account,
         uint8 level,
         uint256 timeLimit
-    ) public virtual returns (
+    ) public returns (
         bytes32 key_,
         uint256 campaignNum_
     ) {
@@ -275,7 +272,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         arguments_[0] = bytes32(bytes20(account));
         arguments_[1] = bytes32(uint256(level));
 
-        return sendRequest(name_, arguments_, timeLimit);
+        return vSendRequest(name_, arguments_, timeLimit);
     }
 
     /**
@@ -285,7 +282,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         address account,
         uint8 level,
         bytes32 key_
-    ) public virtual returns (bool) {
+    ) public returns (bool) {
         // "changeOwnershipLevel"
         bytes32 name_ = 0x6368616e67654f776e6572736869704c6576656c000000000000000000000000;
 
@@ -294,7 +291,7 @@ contract OWNEDAO is Context, DAO, IOwnable {
         arguments_[1] = bytes32(uint256(level));
 
         // conditions
-        require(resolveRequest(name_, arguments_, key_));
+        require(vResolveRequest(name_, arguments_, key_));
 
         /* body start */
         _changeOwnershipLevel(account, level);
@@ -365,31 +362,20 @@ contract OWNEDAO is Context, DAO, IOwnable {
         _owners[account] = level;
     }
 
+    /**
+     * @dev Votes the campaign.
+     */
     function voteAt(
         uint256 campaignNum,
         bool agree_
-    ) public virtual onlyOwner(1) returns (bool) {
+    ) public onlyOwner(1) returns (bool) {
         address msgSender = _msgSender();
 
-        int256 weights_ = _uintToInt(levelOf(msgSender));
+        int256 weights_ = int256(levelOf(msgSender));
         if (!agree_) {
             weights_ *= (-1);
         }
 
         return _voteAt(campaignNum, weights_);
-    }
-
-    /**
-     * @dev Converts uint256 to int256.
-     */
-    function _uintToInt(
-        uint256 elem
-    ) internal pure returns (int256) {
-        require(
-            elem <= uint256(int256(-1)),
-            "Can't cast: out of range of int256 max."
-        );
-
-        return int256(elem);
     }
 }

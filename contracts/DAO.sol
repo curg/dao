@@ -1,45 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.6.2;
-
-import "openzeppelin-solidity/contracts/GSN/Context.sol";
-import "openzeppelin-solidity/contracts/math/SignedSafeMath.sol";
+pragma solidity >=0.6.0 <0.8.0;
 
 
 /**
- * @dev Contract module which provides a Decentralized Autonomous Organization
- * (DAO) mechanism, where including the (weighted) voting system for governance.
+ * @dev Contract module which provides a Decentralized Autonomous
+ * Organization (DAO) mechanism.
  *
- * This module is used through inheritance. It will make available the modifier
- * `resolve(...)`, which can be applied to your functions to restrict their use
- * to the result of votes.
- *
- * Features:
- *
- * - allowing negative voting.
- * - linear (weighted) voting.
- *
- * References:
- *
- * - https://github.com/randao/randao
+ * This module is used through inheritance. It will make available the
+ * function {sendRequest} and {resolveRequest}, which can be applied to
+ * restrict their use.
  */
-contract DAO is Context {
-    using SignedSafeMath for int256;
-
-    struct Participant {
-        bool voted;
-    }
-
-    struct Campaign {
-        uint256 currentTime;    // [block]
-        uint256 timeLimit;      // [block]
-        int256[] votes;
-        mapping(address => Participant) participants;
-        bool ended;
-        bool result;
-    }
-
-    // requestType:
+contract DAO {
     struct Request {
         bytes32 name;   // uses bytes32 instead of string for deducting gas.
         uint256 campaignNum;
@@ -47,38 +19,26 @@ contract DAO is Context {
     }
 
     // Hyperparams
-    uint256 private _confirmationInterval = 12; // [block]
-    uint256 private _minimumTimeLimit = 300;    // [block] // ~= 1 hours
+    uint256 internal _confirmationInterval = 12; // [block]
+    uint256 internal _minimumTimeLimit = 300;    // [block] // ~= 1 hours
 
-    Campaign[] private _campaigns;
-    mapping(bytes32 => Request) private _requestPool;   // Hash => Request
+    mapping(bytes32 => Request) internal _requestPool;   // Hash => Request
 
-    event CampaignCreate(uint256 indexed campaignNum);
-    event CampaignVote(address indexed who, uint256 indexed campaignNum, int256 weight);
-    event CampaignResult(uint256 indexed campaignNum, bool agree);
     event RequestCreate(bytes32 indexed key, uint256 campaignNum);
 
     /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
+     * @dev Sends the governance request.
+     *
+     * It MUST be called by the public function 'sendRequest' which
+     * calculates new campaign number automatically.
      */
-    constructor (
-        // ...
-    ) internal {
-        // ...
-    }
-
-    /**
-     * @dev Sends the voting request.
-     */
-    function sendRequest(
+    function _sendRequest(
+        uint256 campaignNum_,
         bytes32 name_,
-        bytes32[] memory arguments_,
-        uint256 timeLimit
-    ) public virtual returns (
-        bytes32 key_,
-        uint256 campaignNum_
+        bytes32[] memory arguments_
+    ) internal returns (
+        bytes32 key_
     ) {
-        campaignNum_ = createCampaign(timeLimit);
         bool resolve_ = false;
 
         key_ = keccak256(abi.encodePacked(
@@ -98,18 +58,21 @@ contract DAO is Context {
     }
 
     /**
-     * @dev Returns voting result.
+     * @dev Resolves governance.
+     *
+     * It MUST be called by the public function 'resolveRequest' which
+     * returns governance's result by 'getResult'.
      */
-    function resolveRequest(
+    function _resolveRequest(
         bytes32 name_,
         bytes32[] memory arguments_,
         bytes32 key_
-    ) public virtual returns (bool) {
+    ) internal returns (bool) {
         Request storage request = _requestPool[key_];
         
         // conditions
         require(!request.resolve, "The request is already resolved.");
-        require(request.name == name_, "The request type is not 'add'.");
+        require(request.name == name_, "The request name is wrong.");
         require(    // key verification
             key_ == keccak256(abi.encodePacked(
                 request.name,
@@ -122,7 +85,7 @@ contract DAO is Context {
 
         request.resolve = true;
 
-        return getResultAt(request.campaignNum);
+        return request.resolve;
     }
 
     /**
@@ -132,25 +95,6 @@ contract DAO is Context {
         // ...
     ) public view returns (uint256) {
         return _confirmationInterval;
-    }
-
-    /**
-     * @dev Requests the setting `_confirmationInterval`.
-     */
-    function setConfirmationIntervalRequest(
-        uint256 newConfirmationInterval,
-        uint256 timeLimit
-    ) public virtual returns (
-        bytes32 key_,
-        uint256 campaignNum_
-    ) {
-        // "setConfirmationInterval"
-        bytes32 name_ = 0x736574436f6e6669726d6174696f6e496e74657276616c000000000000000000;
-
-        bytes32[] memory arguments_ = new bytes32[](1);
-        arguments_[0] = bytes32(newConfirmationInterval);
-
-        return sendRequest(name_, arguments_, timeLimit);
     }
 
     /**
@@ -165,24 +109,12 @@ contract DAO is Context {
      *
      * https://ethereum.stackexchange.com/questions/183/203#203
      */
-    function setConfirmationInterval(
-        uint256 newConfirmationInterval,
-        bytes32 key_
-    ) public virtual returns (bool) {
+    function _setConfirmationInterval(
+        uint256 newConfirmationInterval
+    ) internal returns (bool) {
         require(newConfirmationInterval < _minimumTimeLimit);
 
-        // "setConfirmationInterval"
-        bytes32 name_ = 0x736574436f6e6669726d6174696f6e496e74657276616c000000000000000000;
-
-        bytes32[] memory arguments_ = new bytes32[](1);
-        arguments_[0] = bytes32(newConfirmationInterval);
-
-        // conditions
-        require(resolveRequest(name_, arguments_, key_));
-
-        /* body start */
         _confirmationInterval = newConfirmationInterval;
-        /* body end */
 
         return true;
     }
@@ -197,25 +129,6 @@ contract DAO is Context {
     }
 
     /**
-     * @dev Requests the setting `_minimumTimeLimit`.
-     */
-    function setMinimumTimeLimitRequest(
-        uint256 newMinimumTimeLimit,
-        uint256 timeLimit
-    ) public virtual returns (
-        bytes32 key_,
-        uint256 campaignNum_
-    ) {
-        // "setMinimumTimeLimit"
-        bytes32 name_ = 0x7365744d696e696d756d54696d654c696d697400000000000000000000000000;
-
-        bytes32[] memory arguments_ = new bytes32[](1);
-        arguments_[0] = bytes32(newMinimumTimeLimit);
-
-        return sendRequest(name_, arguments_, timeLimit);
-    }
-
-    /**
      * @dev Sets {_minimumTimeLimit} to a value
      * other than the default one of 300.
      *
@@ -223,100 +136,13 @@ contract DAO is Context {
      *
      * - the `newMinimumTimeLimit` > `_confirmationInterval`.
      */
-    function setMinimumTimeLimit(
-        uint256 newMinimumTimeLimit,
-        bytes32 key_
-    ) public virtual returns (bool) {
+    function _setMinimumTimeLimit(
+        uint256 newMinimumTimeLimit
+    ) internal returns (bool) {
         require(newMinimumTimeLimit > _confirmationInterval);
 
-        // "setConfirmationInterval"
-        bytes32 name_ = 0x7365744d696e696d756d54696d654c696d697400000000000000000000000000;
-
-        bytes32[] memory arguments_ = new bytes32[](1);
-        arguments_[0] = bytes32(newMinimumTimeLimit);
-
-        // conditions
-        require(resolveRequest(name_, arguments_, key_));
-
-        /* body start */
         _minimumTimeLimit = newMinimumTimeLimit;
-        /* body end */
 
         return true;
-    }
-
-    function createCampaign(
-        uint256 timeLimit
-    ) public virtual returns (
-        uint256 campaignNum_
-    ) {
-        // conditions
-        require(
-            timeLimit >= _minimumTimeLimit,
-            "`timeLimit` MUST be higher than or at least same as `_minimumTimeLimit`."
-        );
-
-        _campaigns.push();
-        campaignNum_ = _campaigns.length - 1;
-        Campaign storage campaign = _campaigns[campaignNum_];
-
-        emit CampaignCreate(campaignNum_);
-
-        campaign.currentTime = block.number;
-        campaign.timeLimit = timeLimit;
-    }
-
-    function _voteAt(
-        uint256 campaignNum,
-        int256 weights
-    ) internal returns (bool) {
-        Campaign storage campaign = _campaigns[campaignNum];
-        address msgSender = _msgSender();
-        Participant storage participant = campaign.participants[msgSender];
-
-        // conditions
-        require(!campaign.ended, "The campaign is ended.");
-        require(campaign.currentTime + campaign.timeLimit > block.number, "Exceed time limit.");
-        require(!participant.voted, "You already voted.");
-
-        participant.voted = true;
-
-        emit CampaignVote(msgSender, campaignNum, weights);
-
-        campaign.votes.push(weights);
-
-        return true;
-    }
-
-    /** 
-     * @dev Computes and returns the result.
-     */
-    function getResultAt(
-        uint256 campaignNum
-    ) public returns (
-        bool agree_
-    ) {
-        Campaign storage campaign = _campaigns[campaignNum];
-
-        if (campaign.ended) {
-            return campaign.result;
-        }
-
-        // conditions
-        require(!campaign.ended, "Already ended.");
-        require(campaign.currentTime + campaign.timeLimit <= block.number, "Not yet.");
-
-        campaign.ended = true;
-
-        int256 result_ = 0;
-        for (uint256 i=0; i<campaign.votes.length; i++) {
-            result_ = result_.add(campaign.votes[i]);
-        }
-
-        campaign.result = (result_ > 0);
-
-        emit CampaignResult(campaignNum, campaign.result);
-
-        return campaign.result;
     }
 }
